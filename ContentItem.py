@@ -16,7 +16,7 @@ class ContentCreate(BaseModel):
     article_links: List[str] = Field(default_factory=list)
     video_links: List[str] = Field(default_factory=list)
 
-    images: List[ImageCreate] = Field(default_factory=list)
+    image_ids: List[int] = Field(default_factory=list)
     
 class ContentResponse(BaseModel):
     id: int
