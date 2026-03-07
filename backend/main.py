@@ -1,4 +1,5 @@
 from fastapi import FastAPI, File, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 import os
 from ContentItem import ContentCreate, ImageCreate
 from pool import connection_pool
@@ -7,6 +8,15 @@ from cloudinary import uploader
 import cloudinary_config
 
 app = FastAPI()
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://127.0.0.1:3000", "*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 async def app_get_root():
@@ -73,6 +83,8 @@ async def delete_data_route(lookup_id: str):
         return {"error": "Data not found"}
     delete_data(lookup_id)
     return {"message": "Data deleted successfully"}
+
+##TODO: Once in a while delete all detached images from the database and cloudinary. A detached image is an image that is not associated with any knowledge base item.s
 
 if __name__ == '__main__':
     os.system('fastapi dev main.py')
