@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KnowledgeOS - Distributed Consensus: The Raft Protocol</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed-dim": "#c0c9e6",
+                        "surface-tint": "#bdc2ff",
+                        "primary-dim": "#acb3ff",
+                        "on-tertiary-container": "#424a63",
+                        "error": "#ec7c8a",
+                        "on-primary-fixed-variant": "#4650b9",
+                        "error-container": "#7f2737",
+                        "on-tertiary-fixed": "#2f384f",
+                        "outline-variant": "#484848",
+                        "primary-container": "#2f3aa3",
+                        "primary": "#bdc2ff",
+                        "on-tertiary": "#4a536c",
+                        "on-primary-fixed": "#27319b",
+                        "tertiary-container": "#ced6f5",
+                        "surface-dim": "#0e0e0e",
+                        "on-error-container": "#ff97a3",
+                        "surface-container": "#191a1a",
+                        "secondary-fixed": "#e5e1e6",
+                        "inverse-primary": "#4954bc",
+                        "outline": "#767575",
+                        "on-secondary-container": "#c1bec3",
+                        "on-tertiary-fixed-variant": "#4b546d",
+                        "primary-fixed": "#e0e0ff",
+                        "secondary-container": "#3c3b3f",
+                        "secondary-fixed-dim": "#d6d3d8",
+                        "surface-container-high": "#1f2020",
+                        "tertiary-dim": "#c0c9e6",
+                        "background": "#0e0e0e",
+                        "surface-variant": "#252626",
+                        "secondary": "#9f9da1",
+                        "on-surface-variant": "#acabaa",
+                        "surface-container-low": "#131313",
+                        "surface-container-lowest": "#000000",
+                        "on-secondary-fixed-variant": "#5c5b5f",
+                        "tertiary-fixed": "#ced6f5",
+                        "on-secondary": "#202023",
+                        "on-primary-container": "#c9cdff",
+                        "inverse-on-surface": "#565555",
+                        "on-secondary-fixed": "#403f43",
+                        "on-surface": "#e7e5e5",
+                        "on-primary": "#28329c",
+                        "on-background": "#e7e5e5",
+                        "primary-fixed-dim": "#ced1ff",
+                        "on-error": "#490013",
+                        "tertiary": "#dee5ff",
+                        "surface": "#0e0e0e",
+                        "error-dim": "#b95463",
+                        "inverse-surface": "#fcf9f8",
+                        "surface-container-highest": "#252626",
+                        "surface-bright": "#2b2c2c",
+                        "secondary-dim": "#9f9da1"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #252626;
+            border-radius: 10px;
+        }
+        .latex-block {
+            font-family: 'Times New Roman', serif;
+            letter-spacing: 0.05em;
+        }
+        /* Custom Typography for Markdown feel */
+        .prose h1 { @apply text-4xl font-extrabold tracking-tighter text-on-surface mb-12; }
+        .prose h2 { @apply text-xl font-bold tracking-tight text-on-surface mt-16 mb-6; }
+        .prose p { @apply text-on-surface-variant leading-relaxed mb-6 font-light text-[1.05rem]; }
+        .prose ul { @apply space-y-3 mb-8 text-on-surface-variant; }
+        .prose li { @apply flex items-start gap-3; }
+        .prose li::before { content: "—"; @apply text-primary font-bold; }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface selection:bg-primary/30">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-[#0e0e0e]/80 backdrop-blur-xl flex justify-between items-center px-8 h-16 w-full">
+<div class="text-lg font-bold tracking-tighter text-[#bdc2ff] font-headline uppercase">KnowledgeOS</div>
+<div class="flex-1 max-w-2xl mx-12">
+<div class="relative group">
+<input class="w-full bg-surface-container-highest border-none rounded-lg py-2 px-10 text-sm focus:ring-1 focus:ring-primary/30 transition-all placeholder:text-on-surface-variant/50" placeholder="Search knowledge base..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm" data-icon="search">search</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-[#252626] transition-colors duration-200 active:scale-95 transition-transform text-[#acabaa]">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button class="p-2 rounded-full hover:bg-[#252626] transition-colors duration-200 active:scale-95 transition-transform text-[#acabaa]">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</header>
+<main class="pt-24 pb-32 max-w-[1600px] mx-auto px-8 lg:px-16 flex flex-col gap-24">
+<!-- Two Column Content Area -->
+<div class="flex flex-col lg:flex-row gap-16 items-start">
+<!-- Left Column: Primary Content -->
+<section class="lg:w-[70%] prose max-w-none">
+<header class="mb-16">
+<span class="font-label text-[10px] uppercase tracking-widest text-primary mb-4 block">Research Memo / Distributed Systems</span>
+<h1 class="font-headline">Distributed Consensus: The Raft Protocol</h1>
+<div class="flex items-center gap-6 text-on-surface-variant text-sm font-label uppercase tracking-wider mt-8">
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-xs" data-icon="calendar_today">calendar_today</span> Oct 12, 2023</span>
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-xs" data-icon="person">person</span> D. Ongaro, J. Ousterhout</span>
+<span class="flex items-center gap-2"><span class="material-symbols-outlined text-xs text-primary" data-icon="verified">verified</span> Peer Reviewed</span>
+</div>
+</header>
+<p>Distributed consensus is a fundamental problem in modern cloud infrastructure. For a cluster of servers to act as a single, coherent unit, they must agree on the state of data even in the presence of network partitions or hardware failures. While Paxos was the dominant protocol for decades, its complexity led to a search for more understandable alternatives.</p>
+<h2>Leader Election Sub-Protocol</h2>
+<p>Raft decomposes consensus into independent sub-problems. The leader election process ensures that at most one leader exists for any given term. If a follower receives no communication over a period of time called the <em>election timeout</em>, it transitions to a candidate state and requests votes from peers.</p>
+<ul>
+<li>Heartbeat mechanism prevents unnecessary re-elections during stable periods.</li>
+<li>Randomized election timeouts ensure minimal split-vote scenarios.</li>
+<li>Candidates must prove their logs are at least as up-to-date as the majority to win.</li>
+</ul>
+<h2>Log Replication Dynamics</h2>
+<p>Once a leader is elected, it begins servicing client requests. Each request contains a command to be executed by the replicated state machines. The leader appends the command to its log as a new entry, then issues AppendEntries RPCs in parallel to each of the other servers to replicate the entry.</p>
+<!-- Small Table -->
+<div class="my-12 overflow-hidden rounded-xl bg-surface-container-low">
+<table class="w-full text-left text-sm border-collapse">
+<thead>
+<tr class="bg-surface-container">
+<th class="p-4 font-label text-[10px] uppercase tracking-wider text-on-surface-variant">Protocol Phase</th>
+<th class="p-4 font-label text-[10px] uppercase tracking-wider text-on-surface-variant">Main Actor</th>
+<th class="p-4 font-label text-[10px] uppercase tracking-wider text-on-surface-variant">Trigger Event</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr>
+<td class="p-4 text-on-surface font-medium">Leader Election</td>
+<td class="p-4 text-on-surface-variant">Candidate</td>
+<td class="p-4 text-on-surface-variant">Timeout expiration</td>
+</tr>
+<tr>
+<td class="p-4 text-on-surface font-medium">Log Replication</td>
+<td class="p-4 text-on-surface-variant">Leader</td>
+<td class="p-4 text-on-surface-variant">Client Request</td>
+</tr>
+<tr>
+<td class="p-4 text-on-surface font-medium">Safety Check</td>
+<td class="p-4 text-on-surface-variant">Follower</td>
+<td class="p-4 text-on-surface-variant">Vote Request Receipt</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2>Safety &amp; Verification</h2>
+<p>Raft ensures safety by guaranteeing that if a leader has committed a log entry for a particular index, that entry will be present in the logs of all future leaders. This is verified through a formal proof of the State Machine Safety property.</p>
+<!-- LaTeX-style equations -->
+<div class="my-16 p-12 bg-surface-container-lowest rounded-xl flex flex-col items-center justify-center gap-6 shadow-2xl">
+<div class="latex-block text-2xl text-on-surface">
+                        P(L_t \cap L_{t+1}) \implies Log(L_t) \subseteq Log(L_{t+1})
+                    </div>
+<div class="latex-block text-lg text-on-surface-variant opacity-70 italic">
+                        The Leader Completeness Property ensures committed entries persist through terms.
+                    </div>
+<div class="latex-block text-xl text-primary">
+                        S_i = \{e \in Log | term(e) \le term(Leader) \}
+                    </div>
+</div>
+<p>The transition between server states (Follower, Candidate, Leader) is governed by strict timeout rules and monotonic term numbering, creating a robust, mathematically verifiable framework for distributed reliability.</p>
+</section>
+<!-- Right Column: Media Gallery -->
+<aside class="lg:w-[30%] lg:sticky lg:top-24 max-h-[calc(100vh-160px)] overflow-y-auto pr-2 flex flex-col gap-6">
+<div class="group relative overflow-hidden rounded-xl bg-surface-container-high transition-all hover:bg-surface-container-highest">
+<img class="w-full aspect-square object-cover opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A low angle shot of a modern glass skyscraper reflecting a clear sky with sharp architectural lines" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUfbGY133MZmSk4S_ozXJ0Eqof1HVRVOlfXi53CiCoo_SrKCaQgUuBxu8gO5NGeot9p5hCTZ8K15Co3oRO1wRiAqLeG49PzJ4e-t2qr0-FaafKOM2qLDxzVaMYg3tVeYp8k5solJfS1wT9gU-ece5bt2z14uy0WP8c4xOD-XKqSHMnK22R0YyoDRgchyrMxsBly_GFginazX3zBh2Dr5dS89ws5whqe8lBVWQ-qHhlykKzMkZgxcu_QnlFAGL-7x3nJyHUrJZ5tFnv"/>
+<div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+<p class="text-[10px] font-label uppercase tracking-widest text-on-surface">Cluster Topology Fig. 1</p>
+</div>
+</div>
+<div class="group relative overflow-hidden rounded-xl bg-surface-container-high transition-all hover:bg-surface-container-highest">
+<img class="w-full aspect-[4/5] object-cover opacity-80 group-hover:opacity-100 transition-opacity" data-alt="Abstract blue glowing server circuit board showing complex data pathways and high-tech connectivity" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvOh1Xtt0rqB_2nq0yMxy3aIuBZPg-2MMcfOcqN1kOVJtcy5WgTtb-bf7GNFohrqhcDiu1YiyObekOPcoFVhMU7XD1jJcfkGY7-RKvyloWdXguHAq3AxhubMEAtIpMPxKvxWxn922JHC--9T_DnQsucxWRNgQiGz6hGO_IS3tFSeEddD57uf0wGFJqHyGZ3oveN_aac3897q0dWu--NAQGWnRppGVXoFFHBo3-ZjxxwfYF9UJlTFJpdf7KpnfeDknnFNDH3qgK-ga6"/>
+<div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+<p class="text-[10px] font-label uppercase tracking-widest text-on-surface">Data Consistency Flow</p>
+</div>
+</div>
+<div class="group relative overflow-hidden rounded-xl bg-surface-container-high transition-all hover:bg-surface-container-highest">
+<img class="w-full aspect-video object-cover opacity-80 group-hover:opacity-100 transition-opacity" data-alt="Close-up of high-speed processor components with dramatic directional lighting and technological detail" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmVfZNp4Z8GFJaveCwhQXJbfncNnSTjIkjUcwFrT4NcAI72UmV0dZgFqsVjHbpaszqg8s7q0aHScfIK2mDiz5xnvZtjqoLc7OwiBleEkimi1ktqu74VxZbTjGsRrah60uBielYXd7t1QIX5t-Vl7b8w5rSGj45As9Wcuy0BmCtOXOi2jyNcBhM1gAxtof1pbxZrfXQrHLrWdVdS41mn1q25C-NLQLkfZYM-etlXMKLe23imb3B5V4OnyVskZl0bw_3W1DZSQoe6UHW"/>
+<div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+<p class="text-[10px] font-label uppercase tracking-widest text-on-surface">Node Latency Analysis</p>
+</div>
+</div>
+<div class="group relative overflow-hidden rounded-xl bg-surface-container-high transition-all hover:bg-surface-container-highest">
+<img class="w-full aspect-square object-cover opacity-80 group-hover:opacity-100 transition-opacity" data-alt="Digital representation of a global network with luminous connections and data points over a dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtz8X7p-_k9XI6NfkI48JdQFKQAHWJsYPhbudGRherztoi-xBrqZajU1I4mgHAN21Zt1c3B9d6fywqnSFiaTiqriKK5DiG5lfDCt-6JT0GWlgp4rPFsDT6uNHMTrTTa06uybsYpOV-uhdVqy44fg90RBINqDMGbWw-mkTjIyLk6AMtSaF2Z8lY2eO7633VFo3QCH0-hrdYvF_bwDj4lz4QtRXWrOi5yNvfStMmpPoST2JQXgwOBC7uv_jtzqfyZk4z-MI6T7WGbRGF"/>
+<div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+<p class="text-[10px] font-label uppercase tracking-widest text-on-surface">Consensus Mesh</p>
+</div>
+</div>
+</aside>
+</div>
+<!-- Bottom Section: Resources -->
+<section class="w-full border-t border-outline-variant/5 pt-16">
+<div class="grid md:grid-cols-2 gap-16">
+<!-- External Sources -->
+<div class="space-y-8">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="hub">hub</span>
+<h3 class="font-label text-xs font-bold uppercase tracking-[0.2em] text-on-surface">External Sources</h3>
+</div>
+<div class="grid gap-4">
+<a class="flex items-center gap-4 p-4 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-all group" href="#">
+<div class="w-10 h-10 rounded flex items-center justify-center bg-error-container/20 text-error">
+<span class="material-symbols-outlined" data-icon="video_library">video_library</span>
+</div>
+<div class="flex-1">
+<div class="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">Visualizing Raft Consensus</div>
+<div class="text-[10px] text-on-surface-variant font-label uppercase tracking-wider">YouTube · 12:45</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="open_in_new">open_in_new</span>
+</a>
+<a class="flex items-center gap-4 p-4 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-all group" href="#">
+<div class="w-10 h-10 rounded flex items-center justify-center bg-primary-container/20 text-primary">
+<span class="material-symbols-outlined" data-icon="article">article</span>
+</div>
+<div class="flex-1">
+<div class="text-sm font-medium text-on-surface group-hover:text-primary transition-colors">The Raft Search for Consensus</div>
+<div class="text-[10px] text-on-surface-variant font-label uppercase tracking-wider">Original Paper · ACM Digital</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="open_in_new">open_in_new</span>
+</a>
+</div>
+</div>
+<!-- Files -->
+<div class="space-y-8">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="folder_open">folder_open</span>
+<h3 class="font-label text-xs font-bold uppercase tracking-[0.2em] text-on-surface">Linked Files</h3>
+</div>
+<div class="grid gap-4">
+<div class="flex items-center gap-4 p-4 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-all group cursor-pointer">
+<div class="w-10 h-10 rounded flex items-center justify-center bg-surface-variant text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="picture_as_pdf">picture_as_pdf</span>
+</div>
+<div class="flex-1">
+<div class="text-sm font-medium text-on-surface">raft-extended-v2.pdf</div>
+<div class="text-[10px] text-on-surface-variant font-label uppercase tracking-wider">Local Storage · 1.4 MB</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="download">download</span>
+</div>
+<div class="flex items-center gap-4 p-4 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-all group cursor-pointer">
+<div class="w-10 h-10 rounded flex items-center justify-center bg-surface-variant text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+</div>
+<div class="flex-1">
+<div class="text-sm font-medium text-on-surface">implementation-notes.md</div>
+<div class="text-[10px] text-on-surface-variant font-label uppercase tracking-wider">Workspace · 42 KB</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="edit">edit</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer Component -->
+<footer class="bg-[#000000] w-full py-12 px-8">
+<div class="bg-[#191a1a] h-px w-full mb-8"></div>
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="font-['Manrope'] uppercase tracking-widest text-[10px] text-[#acabaa]">
+                © 2024 Obsidian Flow Knowledge Management
+            </div>
+<div class="flex gap-8">
+<a class="font-['Manrope'] uppercase tracking-widest text-[10px] text-[#acabaa] hover:text-[#e7e5e5] transition-colors opacity-80 hover:opacity-100" href="#">Documentation</a>
+<a class="font-['Manrope'] uppercase tracking-widest text-[10px] text-[#acabaa] hover:text-[#e7e5e5] transition-colors opacity-80 hover:opacity-100" href="#">Privacy</a>
+<a class="font-['Manrope'] uppercase tracking-widest text-[10px] text-[#acabaa] hover:text-[#e7e5e5] transition-colors opacity-80 hover:opacity-100" href="#">Support</a>
+</div>
+</div>
+</footer>
+</body></html>

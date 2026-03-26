@@ -24,8 +24,7 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  display: block;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -66,3 +65,44 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Additional styles borrowed from contentDisplay.html for parity */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #252626;
+  border-radius: 10px;
+}
+.latex-block {
+  font-family: 'Times New Roman', serif;
+  letter-spacing: 0.05em;
+}
+
+/* Prose tweaks to give markdown a similar feel */
+.prose h1 { font-size: 2.25rem; font-weight: 800; letter-spacing: -0.02em; color: rgba(231,229,229,1); margin-bottom: 3rem; }
+.prose h2 { font-size: 1.125rem; font-weight: 700; color: rgba(231,229,229,1); margin-top: 4rem; margin-bottom: 1.5rem; }
+.prose p { color: rgba(180,180,183,1); line-height: 1.7; margin-bottom: 1.25rem; font-weight: 300; font-size: 1.05rem; }
+.prose ul { margin-bottom: 2rem; }
+.prose li { margin-bottom: 0.5rem; }
+
+/* Small, helpful utility to mimic the dark surface backgrounds used in the template */
+.bg-surface-container { background-color: #191a1a; }
+.bg-surface-container-low { background-color: #131313; }
+.bg-surface-container-high { background-color: #1f2020; }
+.bg-surface-container-highest { background-color: #252626; }
+.text-on-surface { color: #e7e5e5; }
+.text-on-surface-variant { color: #acabaa; }
+.text-primary { color: #bdc2ff; }
+.border-outline-variant { border-color: rgba(118,117,117,0.05); }
+

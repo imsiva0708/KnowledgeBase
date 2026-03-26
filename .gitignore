@@ -1,2 +1,3 @@
 finalProjEnv
 .env
+backend/__pycache__/
