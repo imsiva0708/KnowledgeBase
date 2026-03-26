@@ -18,9 +18,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
+@app.get("/all")
 async def app_get_root():
-    return {"Hello":"World"}
+    conn = connection_pool.getconn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT lookup_id FROM knowledge_base;")
+            rows = cur.fetchall()
+            return {"data": rows}
+    finally:
+        connection_pool.putconn(conn)
+
 lis = []
 
 @app.post("/data")
