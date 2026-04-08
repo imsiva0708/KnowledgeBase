@@ -6,6 +6,8 @@ from pool import connection_pool
 from table_edit import insert_data_into_db, fetch_data , delete_data
 from cloudinary import uploader
 import cloudinary_config
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 
 app = FastAPI()
 
@@ -74,15 +76,6 @@ async def get_data(lookup_id: str):
         return data
     else:
         return {"error": "Data not found"}
-    
-# @app.patch("/data/{lookup_id}")
-# async def update_data_route(lookup_id: str, data: ContentCreate):
-    # existing_data = fetch_data(lookup_id)
-    # if not existing_data:
-    #     return {"error": "Data not found"}
-    # update_data(lookup_id, data)
-    # return {"message": "Data updated successfully"}
-
 
 @app.delete("/data/{lookup_id}")
 async def delete_data_route(lookup_id: str):
@@ -92,7 +85,38 @@ async def delete_data_route(lookup_id: str):
     delete_data(lookup_id)
     return {"message": "Data deleted successfully"}
 
-##TODO: Once in a while delete all detached images from the database and cloudinary. A detached image is an image that is not associated with any knowledge base item.s
+def cleanup_detached_images():
+    """Delete all detached images from the database and cloudinary."""
+    conn = connection_pool.getconn()
+    try:
+        with conn.cursor() as cur:
+            # Find images not associated with any knowledge base item
+            cur.execute("""
+                SELECT id, public_id FROM images 
+                WHERE knowledge_base_id IS NULL;
+            """)
+            detached_images = cur.fetchall()
+            
+            for image_id, public_id in detached_images:
+                # Delete from cloudinary
+                uploader.destroy(public_id)
+                
+                # Delete from database
+                cur.execute("DELETE FROM images WHERE id = %s", (image_id,))
+        
+        conn.commit()
+    finally:
+        connection_pool.putconn(conn)
+
+# Initialize scheduler
+scheduler = BackgroundScheduler()
+scheduler.add_job(cleanup_detached_images, 'interval', minutes=1)
+scheduler.start()
+
+@app.on_event("shutdown")
+def shutdown_event():
+    scheduler.shutdown()
+
 
 if __name__ == '__main__':
     os.system('fastapi dev main.py')

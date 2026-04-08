@@ -59,7 +59,7 @@ function App() {
     return (
       <div>
         <header className="fixed top-0 left-0 right-0 z-50 bg-[#0e0e0e]/80 backdrop-blur-xl flex justify-between items-center px-8 h-16">
-          <div className="text-lg font-bold tracking-tighter text-primary font-headline uppercase cursor-pointer" onClick={resetToHome}>KnowledgeOS</div>
+          <div className="text-lg font-bold tracking-tighter text-primary font-headline uppercase cursor-pointer" onClick={resetToHome}>KnowledgeBASE</div>
           <div className="flex items-center gap-4">
             <button className="p-2 rounded-full hover:bg-[#252626] text-[#acabaa]" onClick={() => setShowCreate(true)}>
               <span className="material-symbols-outlined">add</span>
@@ -111,9 +111,9 @@ function App() {
   return (
     <div className="min-h-screen bg-background text-on-surface flex flex-col">
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#0e0e0e]/80 backdrop-blur-xl flex justify-between items-center px-8 h-16">
-        <div className="text-lg font-bold tracking-tighter text-primary font-headline uppercase">KnowledgeOS</div>
+        <div className="text-lg font-bold tracking-tighter text-primary font-headline uppercase">KnowledgeBASE</div>
         <div className="flex items-center gap-4">
-          <button className="px-4 py-2 rounded bg-primary text-black font-semibold" onClick={() => setShowCreate(true)}>Create Content Item</button>
+          <button className="px-4 py-2 rounded bg-primary text-white font-semibold" onClick={() => setShowCreate(true)}>Create Content Item</button>
         </div>
       </header>
 
@@ -126,7 +126,7 @@ function App() {
               onSearch={() => getData(lookupId)}
             />
             <div className="flex gap-4">
-              <button className="px-6 py-3 rounded bg-primary text-black font-semibold" onClick={() => getData(lookupId)}>Search</button>
+              <button className="px-6 py-3 rounded border border-outline-variant text-on-surface-variant" onClick={() => getData(lookupId)}>Search</button>
               <button className="px-6 py-3 rounded border border-outline-variant text-on-surface-variant" onClick={() => { setLookupId(''); setSearched(false); }}>Clear</button>
             </div>
             {searched && !data && <div className="text-error mt-4">Lookup ID does not exist</div>}
@@ -138,7 +138,7 @@ function App() {
         <div className="fixed inset-0 bg-black/60 z-60 flex items-center justify-center">
           <div className="bg-surface-container-high p-6 rounded-lg w-full max-w-3xl">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl">Create Content Item</h2>
+              <h2 className="text-xl text-white">Create Content Item</h2>
               <button onClick={() => setShowCreate(false)} className="material-symbols-outlined">close</button>
             </div>
             <ContentCreation />

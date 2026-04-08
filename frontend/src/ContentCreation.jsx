@@ -166,6 +166,7 @@ function ContentCreation() {
                     name="name" 
                     value={formData.name} 
                     onChange={handleChange}
+                    style={{ color: 'black' }}
                     required
                 />
             </div>
@@ -178,6 +179,7 @@ function ContentCreation() {
                     name="lookup_id" 
                     value={formData.lookup_id} 
                     onChange={handleChange}
+                    style={{ color: 'black' }}
                     required
                 />
             </div>
@@ -190,6 +192,7 @@ function ContentCreation() {
                     name="group_name" 
                     value={formData.group_name} 
                     onChange={handleChange}
+                    style={{ color: 'black' }}
                     required
                 />
             </div>
@@ -202,6 +205,7 @@ function ContentCreation() {
                         placeholder="Add tag" 
                         value={tagInput} 
                         onChange={(e) => setTagInput(e.target.value)}
+                        style={{ color: 'black' }}
                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
                     />
                     <button type="button" onClick={handleAddTag}>+</button>
@@ -239,6 +243,7 @@ function ContentCreation() {
                     name="md_notes" 
                     value={formData.md_notes} 
                     onChange={handleChange}
+                    style={{ color: 'black' }}
                     rows="8"
                 />
             </div>
@@ -279,6 +284,7 @@ function ContentCreation() {
                         placeholder="Add reference URL" 
                         value={referenceInput} 
                         onChange={(e) => setReferenceInput(e.target.value)}
+                        style={{ color: 'black' }}
                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddReference())}
                     />
                     <button type="button" onClick={handleAddReference}>+</button>
